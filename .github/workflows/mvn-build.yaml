@@ -1,0 +1,43 @@
+name: Build
+on: workflow_dispatch
+
+jobs:
+  build:
+    name: Build
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+
+    runs-on: mylab-vm
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 11
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v4.5
+        with:
+          maven-version: 3.8.2
+      - name: Build
+        run: mvn clean test package verify -B jacoco:report 
+   
+      - run: |
+          mkdir staging && cp target/*.jar staging
+          ls -l target/site/jacoco
+          
+      
+      - uses: actions/upload-artifact@v3
+        with:
+          name: hello-world
+          path: staging
+      - uses: actions/upload-artifact@v3
+        with:
+          name: index.html
+          path: target/site/jacoco
